@@ -1,0 +1,11 @@
+Various system tools.
+
+
+- system:
+    timer decorators and process management
+
+- network:
+    network interfaces, hwaddr and hosts management
+
+- networK.ssh:
+    ssh session class and methods
