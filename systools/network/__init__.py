@@ -1,4 +1,3 @@
-import re
 import socket
 import fcntl
 import struct
@@ -9,24 +8,11 @@ from systools.system import popen
 
 
 SOCKET_TIMEOUT = 120
-RE_HWADDR = re.compile(r'\b(%s)\b' % ':'.join(['[0-9a-f]{2}'] * 6), re.I)
 
 
 socket.setdefaulttimeout(SOCKET_TIMEOUT)
 logger = logging.getLogger(__name__)
 
-
-def get_hwaddr():
-    '''Get mac adresses.
-
-    :return: list
-    '''
-    res = []
-    for line in popen('ifconfig')[0]:
-        r = RE_HWADDR.search(line)
-        if r:
-            res.append(r.group(1))
-    return res
 
 def _get_interfaces():
     '''Get network interfaces.
@@ -41,10 +27,10 @@ def _get_interfaces():
     namestr = names.tostring()
     return [namestr[i:i + 32].split('\0', 1)[0] for i in range(0, outbytes, 32)]
 
-def _get_interface_ip(interface):
+def _get_interface_ip(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        return socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', interface[:15]))[20:24])
+        return socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s', ifname[:15]))[20:24])
     except Exception:
         pass
 
@@ -60,15 +46,25 @@ def get_ip():
         return []
     return [ip for i, ip in sorted(res) if not ip.startswith('127.0.')]
 
+def get_hwaddr(ifname):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    info = fcntl.ioctl(s.fileno(), 0x8927,  struct.pack('256s', ifname[:15]))
+    return ''.join(['%02x:' % ord(char) for char in info[18:24]])[:-1]
+
 def get_hosts():
     '''Get online hosts.
 
     :return: list
     '''
+    ips = get_ip()
+    if not ips:
+        return
+
     res = []
-    for ip in get_ip():
+    for ip in ips:
         ip_range = '%s.0/24' % ip.rsplit('.', 1)[0]
         stdout, stderr, return_code = popen(['fping', '-a', '-A', '-r1', '-g', ip_range])
         if return_code is not None:
             res += stdout
+
     return list(set(res))
