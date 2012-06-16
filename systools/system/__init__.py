@@ -7,6 +7,7 @@ from functools import wraps
 import signal
 from glob import glob
 import inspect
+from operator import itemgetter
 import logging
 
 from lxml import etree
@@ -145,11 +146,13 @@ def parse_ifconfig(output):
 
     res = []
     for ifname, data in info.items():
-        res.append({
-                'ifname': ifname,
-                'ip': data.get('ip'),
-                'hwaddr': data.get('hwaddr'),
-                })
+        if data.get('hwaddr'):
+            res.append({
+                    'ifname': ifname,
+                    'ip': data.get('ip'),
+                    'hwaddr': data['hwaddr'],
+                    })
+    res = sorted(res, key=itemgetter('ifname'))
     return res
 
 def parse_diskutil(output, type='list'):

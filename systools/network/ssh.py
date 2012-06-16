@@ -1,4 +1,5 @@
 import os.path
+from operator import itemgetter
 import logging
 
 from sshex import Ssh
@@ -18,9 +19,7 @@ class Host(Ssh):
         return self.run(cmd, expects=expects, **kwargs)
 
     def run_ssh(self, cmd, password=None, **kwargs):
-        expects = [
-            (r'(?i)\(yes/no\)', 'yes'),
-            ]
+        expects = [(r'(?i)\(yes/no\)', 'yes')]
         if password:
             expects.append((r'(?i)\bpassword\b', password))
 
@@ -105,4 +104,5 @@ class Host(Ssh):
                     'uuid': info.get('uuid'),
                     'path': info.get('path'),
                     })
+        res = sorted(res, key=itemgetter('dev'))
         return res
