@@ -59,16 +59,16 @@ class Host(Ssh):
     def _get_diskutils_info(self):
         disks = {}
 
-        output = self.run('diskutil list -plist', split_output=False)[0]
-        if not output:
+        output, return_code = self.run('diskutil list -plist', split_output=False)
+        if return_code != 0:
             return
         info = parse_diskutil(output, type='list')
         if not info:
             return
 
         for disk in info:
-            output = self.run('diskutil info -plist %s' % disk, split_output=False)[0]
-            if not output:
+            output, return_code = self.run('diskutil info -plist %s' % disk, split_output=False)
+            if return_code != 0:
                 continue
 
             uuid, dev = parse_diskutil(output, type='info')
@@ -90,8 +90,8 @@ class Host(Ssh):
         else:
             disks = self._get_diskutils_info() or {}
 
+        # Get mount points
         if disks:
-            # Get mount points
             for line in self.run('mount')[0]:
                 dev, d, path, d = line.split(None, 3)
                 if dev in disks:
