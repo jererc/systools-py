@@ -133,7 +133,7 @@ def parse_ifconfig(output):
     for line in output:
         lsplit = line.split()
         if line and line[0] not in (' ', '\t'):
-            ifname = lsplit[0]
+            ifname = lsplit[0].split(':')[0]
             info.setdefault(ifname, {})
 
         if ifname:
