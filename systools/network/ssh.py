@@ -11,6 +11,7 @@ from systools.system import PATH_UUIDS, parse_ifconfig, parse_diskutil
 logger = logging.getLogger(__name__)
 logging.getLogger('paramiko').setLevel(logging.ERROR)
 logging.getLogger('sshex').setLevel(logging.INFO)
+logging.getLogger('sftpsync').setLevel(logging.INFO)
 
 
 class Host(Ssh):
