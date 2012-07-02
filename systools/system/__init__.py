@@ -23,6 +23,12 @@ logger = logging.getLogger(__name__)
 class TimeoutError(Exception): pass
 
 
+class dotdict(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
 def timeout(seconds=0, minutes=0, hours=0):
     '''Raise an exception if the decorated function has not finished processing
     before the timeout.
@@ -123,8 +129,7 @@ def is_file_open(value):
             return True
 
 def udisks(dev, option):
-    stdout, stderr, return_code = popen(['udisks', option, dev])
-    if return_code == 0:
+    if popen(['udisks', option, dev])[-1] == 0:
         return True
 
 def parse_ifconfig(output):
@@ -179,9 +184,3 @@ def parse_diskutil(output, type='list'):
                 uuid = dict_[index + 1].text.lower()
 
         return uuid, dev
-
-
-class dotdict(dict):
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__

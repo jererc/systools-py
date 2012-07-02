@@ -52,7 +52,7 @@ def get_hwaddr(ifname):
     return ''.join(['%02x:' % ord(char) for char in info[18:24]])[:-1]
 
 def get_hosts():
-    '''Get online hosts.
+    '''Get LAN alive hosts.
 
     :return: list
     '''
