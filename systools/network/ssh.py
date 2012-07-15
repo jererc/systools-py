@@ -4,7 +4,7 @@ from operator import itemgetter
 from stat import S_ISDIR
 import logging
 
-from sshex import Ssh
+from sshex import Ssh, AuthenticationError, TimeoutError, SshError
 from sftpsync import Sftp
 
 from systools.system import PATH_UUIDS, parse_ifconfig, parse_diskutil
