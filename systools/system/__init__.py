@@ -1,4 +1,4 @@
-import os.path
+import os
 import re
 import time
 from datetime import timedelta
@@ -81,6 +81,23 @@ def timer(duration_min=5):
                 logging.getLogger(module_name).debug('processed in %s (args: %s, %s)', timedelta(seconds=duration), str(args), str(kwargs))
 
             return result
+        return wraps(func)(wrapper)
+    return decorator
+
+def pgrp(term_signal=9):
+    '''Allows to kill a process and its children.
+    '''
+    def decorator(func):
+        os.setpgrp()
+
+        def sigint_handler(signum, frame):
+            os.killpg(os.getpgrp(), term_signal)
+
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGTERM, sigint_handler)
+            result = func(*args, **kwargs)
+            return result
+
         return wraps(func)(wrapper)
     return decorator
 
