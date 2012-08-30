@@ -8,6 +8,7 @@ import signal
 from glob import glob
 import inspect
 from operator import itemgetter
+import imp
 import logging
 
 from lxml import etree
@@ -81,23 +82,6 @@ def timer(duration_min=5):
                 logging.getLogger(module_name).debug('processed in %s (args: %s, %s)', timedelta(seconds=duration), str(args), str(kwargs))
 
             return result
-        return wraps(func)(wrapper)
-    return decorator
-
-def pgrp(term_signal=9):
-    '''Allows to kill a process and its children.
-    '''
-    def decorator(func):
-        os.setpgrp()
-
-        def sigint_handler(signum, frame):
-            os.killpg(os.getpgrp(), term_signal)
-
-        def wrapper(*args, **kwargs):
-            signal.signal(signal.SIGTERM, sigint_handler)
-            result = func(*args, **kwargs)
-            return result
-
         return wraps(func)(wrapper)
     return decorator
 
@@ -201,3 +185,14 @@ def parse_diskutil(output, type='list'):
                 uuid = dict_[index + 1].text.lower()
 
         return uuid, dev
+
+def get_package_modules(package_name):
+    res = []
+
+    file, path, description = imp.find_module(package_name)
+    for module in os.listdir(path):
+        filename, ext = os.path.splitext(module)
+        if ext.lower() == '.py':
+            res.append(filename)
+
+    return res
