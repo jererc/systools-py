@@ -198,6 +198,23 @@ class Host(Ssh):
         sftp = Sftp(self.host, self.username, self.password, port=self.port)
         sftp.sync(*args, **kwargs)
 
+    def _get_pid(self, cmd):
+        stdout, return_code = self.run('ps aux')
+        if not stdout:
+            return
+
+        for line in stdout:
+            line = line.split(None, 10)
+            if line[-1] == cmd:
+                return int(line[1])
+
+    def stop_cmd(self, cmd):
+        self._get_chan()
+        pid = self._get_pid(cmd)
+        if pid:
+            self.run('kill %s' % pid, use_sudo=True)
+            return self._get_pid(cmd) is None
+
 
 def get_size(val):
     '''Get size in MB.
