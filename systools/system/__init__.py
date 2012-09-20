@@ -93,9 +93,21 @@ def get_log_lines(file, lines_max=100):
 
     :return: list
     '''
+    files_sorted = []
+    files = {}
+    for log in glob(file + '*'):
+        if log == file:
+            files_sorted.insert(0, log)
+        else:
+            ext = log.rsplit('.', 1)[-1]
+            files[int(ext)] = log
+
+    for i in sorted(files):
+        files_sorted.append(files[i])
+
     lines = []
-    for log_file in sorted(glob(file + '*')):
-        with open(log_file) as fd:
+    for log in files_sorted:
+        with open(log) as fd:
             lines += reversed(fd.read().splitlines())
         if len(lines) >= lines_max:
             break
