@@ -205,7 +205,7 @@ class Host(Ssh):
 
         for line in stdout:
             line = line.split(None, 10)
-            if line[-1] == cmd:
+            if line and line[-1] == cmd:
                 return int(line[1])
 
     def stop_cmd(self, cmd):
