@@ -126,7 +126,7 @@ def popen(cmd, cwd=None):
         stdout, stderr = proc.communicate()
         return stdout.splitlines(), stderr.splitlines(), proc.returncode
     except Exception, e:
-        logger.exception('failed to execute command "%s": %s' % (' '.join(cmd), e))
+        logger.exception('failed to execute command "%s": %s' % (' '.join(cmd), str(e)))
         return None, None, None
 
 def is_file_open(value):
