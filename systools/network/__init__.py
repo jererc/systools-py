@@ -9,7 +9,6 @@ from systools.system import popen
 
 SOCKET_TIMEOUT = 120
 
-
 socket.setdefaulttimeout(SOCKET_TIMEOUT)
 logger = logging.getLogger(__name__)
 

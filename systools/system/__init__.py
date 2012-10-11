@@ -17,7 +17,6 @@ from lxml import etree
 PATH_UUIDS = '/dev/disk/by-uuid'
 RE_HWADDR = re.compile(r'\b(%s)\b' % ':'.join(['[0-9a-f]{2}'] * 6), re.I)
 
-
 logger = logging.getLogger(__name__)
 
 
