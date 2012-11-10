@@ -169,8 +169,7 @@ def parse_ifconfig(output):
                     'ip': data.get('ip'),
                     'hwaddr': data['hwaddr'],
                     })
-    res = sorted(res, key=itemgetter('ifname'))
-    return res
+    return sorted(res, key=itemgetter('ifname'))
 
 def parse_diskutil(output, type='list'):
     dict_ = etree.fromstring(output)[0]
@@ -181,7 +180,6 @@ def parse_diskutil(output, type='list'):
             if el.text == 'AllDisks':
                 for disk in dict_[index + 1]:
                     disks.append(disk.text)
-
         return disks
 
     elif type == 'info':
@@ -194,16 +192,13 @@ def parse_diskutil(output, type='list'):
                     dev = os.path.join('/dev', dev)
             elif el.text == 'VolumeUUID':
                 uuid = dict_[index + 1].text.lower()
-
         return uuid, dev
 
 def get_package_modules(package_name):
     res = []
-
     file, path, description = imp.find_module(package_name)
     for module in os.listdir(path):
         filename, ext = os.path.splitext(module)
         if ext.lower() == '.py':
             res.append(filename)
-
     return res

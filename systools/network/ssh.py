@@ -1,11 +1,12 @@
-import os.path
+import os
 import re
 from operator import itemgetter
-from stat import S_ISDIR
+from stat import S_ISREG, S_ISDIR
 import logging
 
+import paramiko
+
 from sshex import Ssh, AuthenticationError, TimeoutError, SshError
-from sftpsync import Sftp
 
 from systools.system import PATH_UUIDS, parse_ifconfig, parse_diskutil
 
@@ -15,13 +16,17 @@ RE_SIZE = re.compile(r'^([\d\.]+)([bkmg]*)$', re.I)
 logger = logging.getLogger(__name__)
 logging.getLogger('paramiko').setLevel(logging.CRITICAL)
 logging.getLogger('sshex').setLevel(logging.INFO)
-logging.getLogger('sftpsync').setLevel(logging.INFO)
 
 
 class Host(Ssh):
+
     def __init__(self, *args, **kwargs):
         super(Host, self).__init__(*args, **kwargs)
-        self.sftp = self.client.open_sftp()
+
+        # SFTP client
+        transport = paramiko.Transport((self.host, self.port))
+        transport.connect(username=self.username, password=self.password)
+        self.sftp = paramiko.SFTPClient.from_transport(transport)
 
     def run_password(self, cmd, password, **kwargs):
         expects = [(r'(?i)\bpassword\b', password)]
@@ -31,33 +36,91 @@ class Host(Ssh):
         expects = [(r'(?i)\(yes/no\)', 'yes')]
         if password:
             expects.append((r'(?i)\bpassword\b', password))
-
         return self.run(cmd, expects=expects, **kwargs)
 
-    def exists(self, path):
-        if self.run('ls %s' % path)[-1] == 0:
-            return True
+    def listdir(self, path):
+        try:
+            return [os.path.join(path, f) for f in self.sftp.listdir(path)]
+        except IOError:
+            return []
 
-    def command_exists(self, cmd):
-        if self.run('type -P %s' % cmd)[-1] == 0:
-            return True
+    def exists(self, file):
+        try:
+            self.sftp.lstat(file)
+        except IOError:
+            return False
+        return True
 
-    def mkdir(self, path, use_sudo=False):
-        if self.run('mkdir %s' % path, use_sudo=use_sudo)[-1] == 0:
-            return True
+    def isfile(self, file):
+        try:
+            stat_ = self.sftp.lstat(file)
+        except IOError:
+            return False
+        return S_ISREG(stat_.st_mode)
 
-    def makedirs(self, path, use_sudo=False):
+    def isdir(self, file):
+        try:
+            stat_ = self.sftp.lstat(file)
+        except IOError:
+            return False
+        return S_ISDIR(stat_.st_mode)
+
+    def walk(self, path, topdown=True):
+        for file in self.listdir(path):
+            if not self.isdir(file):
+                yield 'file', file
+            else:
+                if topdown:
+                    yield 'dir', file
+                    for res in self.walk(file, topdown=topdown):
+                        yield res
+                else:
+                    for res in self.walk(file, topdown=topdown):
+                        yield res
+                    yield 'dir', file
+
+    def remove(self, file):
+        '''Remove a file or directory.
+        '''
+        if not self.isdir(file):
+            self.sftp.remove(file)
+        else:
+            for type, file_ in self.walk(file, topdown=False):
+                if type == 'dir':
+                    self.sftp.rmdir(file_)
+                else:
+                    self.sftp.remove(file_)
+            self.sftp.rmdir(file)
+
+    def mkdir(self, path):
+        try:
+            self.sftp.mkdir(path)
+        except IOError:
+            return
+        return True
+
+    def makedirs(self, path):
+        path = path.rstrip('/')
         paths = []
-        while path not in ('/', ''):
+        while path.strip('/'):
             paths.insert(0, path)
             path = os.path.dirname(path)
-
         for path in paths:
-            if not self.exists(path) \
-                    and not self.mkdir(path, use_sudo=use_sudo):
+            if self.exists(path):
+                continue
+            if not self.mkdir(path):
                 return
-
         return True
+
+    def download(self, src, dst, callback=None):
+        path = os.path.dirname(dst)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        self.sftp.get(src, dst, callback=callback)
+
+    def upload(self, src, dst, callback=None):
+        self.makedirs(os.path.dirname(dst))
+        self.sftp.put(src, dst, callback=callback)
 
     def _udisks(self, dev, option, use_sudo=False):
         cmd = 'udisks %s %s' % (option, dev)
@@ -77,6 +140,8 @@ class Host(Ssh):
 
     def get_ifconfig(self):
         stdout = self.run('ifconfig')[0]
+        if not stdout:
+            return []
         return parse_ifconfig(stdout)
 
     def _get_diskutils_info(self):
@@ -159,55 +224,22 @@ class Host(Ssh):
 
         return res
 
-    def listdir(self, path):
-        return [os.path.join(path, f) for f in self.sftp.listdir(path)]
-
-    def is_dir(self, file):
-        return S_ISDIR(self.sftp.lstat(file).st_mode)
-
-    def walk(self, path, topdown=True):
-        for file in self.listdir(path):
-            if not self.is_dir(file):
-                yield 'file', file
-            else:
-                if topdown:
-                    yield 'dir', file
-                    for res in self.walk(file, topdown=topdown):
-                        yield res
-                else:
-                    for res in self.walk(file, topdown=topdown):
-                        yield res
-                    yield 'dir', file
-
-    def remove(self, file):
-        '''Remove a file or directory.
-        '''
-        if not self.is_dir(file):
-            self.sftp.remove(file)
-        else:
-            for type, file_ in self.walk(file, topdown=False):
-                if type == 'dir':
-                    self.sftp.rmdir(file_)
-                else:
-                    self.sftp.remove(file_)
-
-            self.sftp.rmdir(file)
-
-    def sftpsync(self, *args, **kwargs):
-        sftp = Sftp(self.host, self.username, self.password, port=self.port)
-        sftp.sync(*args, **kwargs)
+    def command_exists(self, cmd):
+        if self.run('type -P %s' % cmd)[-1] == 0:
+            return True
 
     def _get_pid(self, cmd):
         stdout, return_code = self.run('ps aux')
         if not stdout:
             return
-
         for line in stdout:
             line = line.split(None, 10)
             if line and line[-1] == cmd:
                 return int(line[1])
 
     def stop_cmd(self, cmd):
+        '''Kill the process if the command is running.
+        '''
         self._get_chan()
         pid = self._get_pid(cmd)
         if pid:
