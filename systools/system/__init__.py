@@ -29,9 +29,8 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 
-def timeout(seconds=0, minutes=0, hours=0):
-    '''Raise an exception if the decorated function has not finished processing
-    before the timeout.
+def timeout(seconds=0, minutes=0, hours=0, **parameters):
+    '''Return defaut of raise if the timeout is reached.
     '''
     delay = seconds + 60 * minutes + 3600 * hours
 
@@ -44,6 +43,10 @@ def timeout(seconds=0, minutes=0, hours=0):
             signal.alarm(delay)
             try:
                 result = func(*args, **kwargs)
+            except TimeoutError:
+                if 'return_value' not in parameters:
+                    raise
+                result = parameters['return_value']
             finally:
                 signal.alarm(0)
             return result
