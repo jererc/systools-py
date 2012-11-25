@@ -180,8 +180,12 @@ class Host(Ssh):
 
         # Get mount points
         if disks:
-            for line in self.run('mount')[0]:
-                dev, d, path, d = line.split(None, 3)
+            mountpoints = self.run('mount')[0] or []
+            for line in mountpoints:
+                try:
+                    dev, d, path, d = line.split(None, 3)
+                except ValueError:
+                    continue
                 if dev in disks:
                     disks[dev]['path'] = path
 

@@ -5,7 +5,6 @@ from datetime import timedelta
 import subprocess
 from functools import wraps
 import signal
-from glob import glob
 import inspect
 from operator import itemgetter
 import imp
@@ -43,10 +42,11 @@ def timeout(seconds=0, minutes=0, hours=0, **parameters):
             signal.alarm(delay)
             try:
                 result = func(*args, **kwargs)
-            except TimeoutError:
+            except TimeoutError, e:
                 if 'return_value' not in parameters:
                     raise
                 result = parameters['return_value']
+                logger.error(str(e))
             finally:
                 signal.alarm(0)
             return result
@@ -87,34 +87,6 @@ def timer(duration_min=5):
         return wraps(func)(wrapper)
     return decorator
 
-def get_log_lines(file, lines_max=100):
-    '''Get the reversed rotated log files lines.
-
-    :param file: log file
-    :param lines_max: maximum log lines to get
-
-    :return: list
-    '''
-    files_sorted = []
-    files = {}
-    for log in glob(file + '*'):
-        if log == file:
-            files_sorted.insert(0, log)
-        else:
-            ext = log.rsplit('.', 1)[-1]
-            files[int(ext)] = log
-
-    for i in sorted(files):
-        files_sorted.append(files[i])
-
-    lines = []
-    for log in files_sorted:
-        with open(log) as fd:
-            lines += reversed(fd.read().splitlines())
-        if len(lines) >= lines_max:
-            break
-    return lines[:lines_max]
-
 def popen(cmd, cwd=None):
     '''Execute a command.
 
@@ -124,7 +96,8 @@ def popen(cmd, cwd=None):
         cmd = cmd.split()
 
     try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+        proc = subprocess.Popen(cmd,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
         stdout, stderr = proc.communicate()
         return stdout.splitlines(), stderr.splitlines(), proc.returncode
     except Exception, e:
