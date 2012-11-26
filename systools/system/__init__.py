@@ -104,18 +104,6 @@ def popen(cmd, cwd=None):
         logger.exception('failed to execute command "%s": %s' % (' '.join(cmd), str(e)))
         return None, None, None
 
-def is_file_open(value):
-    '''Check if a file which name contains the string is open.
-    '''
-    stdout, stderr, return_code = popen(['lsof', '-F', 'n', '/'])
-    if return_code:
-        return
-
-    re_incl = re.compile(r'%s' % re.escape(value))
-    for line in stdout:
-        if re_incl.search(line):
-            return True
-
 def udisks(dev, option):
     if popen(['udisks', option, dev])[-1] == 0:
         return True
