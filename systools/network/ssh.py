@@ -199,34 +199,20 @@ class Host(Ssh):
         res = sorted(res, key=itemgetter('dev'))
         return res
 
-    def df(self, path=None):
-        res = {}
-        for line in self.run('df')[0]:
-            line = line.split()
+    def df(self, path):
+        '''Get the available size in MB.
+        '''
+        stdout, return_code = self.run('df -P %s' % path)
+        if return_code != 0:
+            stdout, return_code = self.run('df %s' % path)
+            if return_code != 0:
+                return
 
-            sizes = []
-            for val in line:
-                size = get_size(val)
-                if size is not None:
-                    sizes.append(size)
-            if len(sizes) != 3:
-                continue
-
-            mnt = line[0].split(':')[0]
-            res[mnt] = {
-                'total': sizes[0],
-                'used': sizes[1],
-                'available': sizes[2],
-                }
-
-        if path:
-            try:
-                mnt = max([m for m in res if path.startswith(m)])
-                return res[mnt]
-            except ValueError:
-                pass
-
-        return res
+        line = stdout[-1].rsplit()
+        sizes = [get_size(v) for v in line]
+        sizes = [v for v in sizes if v]
+        if len(sizes) == 3:
+            return sizes[-1]
 
     def command_exists(self, cmd):
         if self.run('type -P %s' % cmd)[-1] == 0:
