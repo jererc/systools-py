@@ -1,6 +1,8 @@
 import socket
 import logging
 
+import netifaces
+
 from systools.system import popen
 
 
@@ -13,8 +15,6 @@ logger = logging.getLogger(__name__)
 def get_ips(with_loopback=False):
     '''Get local IPs.
     '''
-    import netifaces
-
     res = []
     for interface in netifaces.interfaces():
         info = netifaces.ifaddresses(interface).get(netifaces.AF_INET)
