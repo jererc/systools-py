@@ -24,9 +24,14 @@ class Host(Ssh):
         super(Host, self).__init__(*args, **kwargs)
 
         # SFTP client
-        transport = paramiko.Transport((self.host, self.port))
-        transport.connect(username=self.username, password=self.password)
-        self.sftp = paramiko.SFTPClient.from_transport(transport)
+        self._transport = paramiko.Transport((self.host, self.port))
+        self._transport.connect(username=self.username, password=self.password)
+        self.sftp = paramiko.SFTPClient.from_transport(self._transport)
+
+    def __del__(self):
+        if hasattr(self, '_transport'):
+            self._transport.close()
+        super(Host, self).__del__()
 
     def run_password(self, cmd, password, **kwargs):
         expects = [(r'(?i)\bpassword\b', password)]
