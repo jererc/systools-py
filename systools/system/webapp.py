@@ -11,6 +11,7 @@ def run(app, host='0.0.0.0', port=8000):
                 '''
                 self.usage = None
                 self.callable = None
+                self.prog = None
                 self.options = options
                 self.do_load_config()
 
