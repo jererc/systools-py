@@ -100,9 +100,11 @@ class Host(Ssh):
     def mkdir(self, path):
         try:
             self.sftp.mkdir(path)
+            return True
         except IOError:
-            return
-        return True
+            if self.run('mkdir %s' % path)[-1] == 0:
+                return True
+            logger.error('failed to create path %s' % path)
 
     def makedirs(self, path):
         path = path.rstrip('/')
