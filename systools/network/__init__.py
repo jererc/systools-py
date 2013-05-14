@@ -32,17 +32,17 @@ def get_ips(with_loopback=False):
 def is_local(host):
     return socket.gethostbyname(host) in get_ips(True)
 
-def get_hosts():
+def get_hosts(ip_range=None):
     '''Get LAN alive hosts.
     '''
-    local_ips = get_ips()
-    if not local_ips:
-        return
+    if not ip_range:
+        ip_range = ['%s.0/24' % ip.rsplit('.', 1)[0] for ip in get_ips()]
+    elif not isinstance(ip_range, (list, tuple)):
+        ip_range = [ip_range]
 
     res = []
-    for ip in local_ips:
-        ip_range = '%s.0/24' % ip.rsplit('.', 1)[0]
-        stdout, stderr, return_code = popen(['fping', '-a', '-A', '-r1', '-g', ip_range])
+    for ip_range_ in ip_range:
+        stdout, stderr, return_code = popen(['fping', '-a', '-A', '-r1', '-g', ip_range_])
         if return_code is not None:
             res += stdout
 

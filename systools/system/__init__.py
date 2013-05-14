@@ -166,3 +166,12 @@ def get_package_modules(package_name):
         if ext.lower() == '.py':
             res.append(filename)
     return res
+
+def check_commands(cmds):
+    res = True
+    for cmd in cmds:
+        if popen('which %s' % cmd)[-1] != 0:
+            res = False
+            logger.error('%s is missing' % cmd)
+    return res
+
