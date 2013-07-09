@@ -176,14 +176,15 @@ class Host(Ssh):
         disks = {}
 
         # Get devices and uuids
-        if self.exists(PATH_UUIDS):
-            for line in self.run('ls --color=never -l %s' % PATH_UUIDS)[0][1:]:  # skip details line
-                d, uuid, d, link = line.rsplit(None, 3)
-                dev = os.path.join('/dev', os.path.basename(link))
-                disks[dev] = {'uuid': uuid, 'dev': dev}
-
-        else:
+        if not self.exists(PATH_UUIDS):
             disks = self._get_diskutils_info() or {}
+        else:
+            stdout = self.run('ls --color=never -l %s' % PATH_UUIDS)[0]
+            if stdout:
+                for line in stdout[1:]:  # skip details line
+                    d, uuid, d, link = line.rsplit(None, 3)
+                    dev = os.path.join('/dev', os.path.basename(link))
+                    disks[dev] = {'uuid': uuid, 'dev': dev}
 
         # Get mount points
         if disks:
