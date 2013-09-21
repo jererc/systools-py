@@ -174,4 +174,3 @@ def check_commands(cmds):
             res = False
             logger.error('%s is missing' % cmd)
     return res
-
