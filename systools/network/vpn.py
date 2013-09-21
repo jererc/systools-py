@@ -101,8 +101,10 @@ class AutoVPN(object):
         uuid = vpn_con.GetSettings()['connection']['uuid']
         if iface.Get(NM + '.Connection.Active', 'Uuid') == uuid:
             state = iface.Get(NM + '.VPN.Connection', 'VpnState')
-            if state == 5:
+            if state == 5:  # connected
                 self.bind_interface(active_con)
+                if self.on_connect:
+                    self.on_connect()
                 return
 
         # Activate VPN
