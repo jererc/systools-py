@@ -36,7 +36,7 @@ class AutoVPN(object):
     def onVpnStateChanged(self, state, reason):
         if state == 5:  # connected
             self.failed_attempts = 0
-            logger.info('"%s" connected' % self.vpn_name)
+            logger.info('"%s" connected', self.vpn_name)
             if self.on_connect:
                 self.on_connect()
 
@@ -45,11 +45,11 @@ class AutoVPN(object):
                 self.on_disconnect()
 
             if not self.max_attempts or self.failed_attempts < self.max_attempts:
-                logger.error('"%s" disconnected, attempting to reconnect' % self.vpn_name)
+                logger.error('"%s" disconnected, attempting to reconnect', self.vpn_name)
                 self.failed_attempts += 1
                 gobject.timeout_add(self.delay, self.activate_vpn)
             else:
-                logger.error('"%s" disconnected, exceeded %d max attempts' % (self.vpn_name, self.max_attempts))
+                logger.error('"%s" disconnected, exceeded %d max attempts', self.vpn_name, self.max_attempts)
                 self.failed_attempts = 0
 
     def get_network_manager(self):
@@ -69,7 +69,7 @@ class AutoVPN(object):
             con_settings = iface.GetSettings()['connection']
             if con_settings['type'] == 'vpn' and con_settings['id'] == name:
                 return iface
-        logger.error('failed to acquire "%s" VPN interface' % name)
+        logger.error('failed to acquire "%s" VPN interface', name)
 
     def get_active_connection(self):
         '''Get the dbus interface of the first active network connection.

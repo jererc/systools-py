@@ -104,7 +104,7 @@ class Host(Ssh):
         except IOError:
             if self.run('mkdir %s' % path)[-1] == 0:
                 return True
-            logger.error('failed to create path %s' % path)
+            logger.error('failed to create path %s', path)
 
     def makedirs(self, path):
         path = path.rstrip('/')

@@ -101,7 +101,7 @@ def popen(cmd, cwd=None):
         stdout, stderr = proc.communicate()
         return stdout.splitlines(), stderr.splitlines(), proc.returncode
     except Exception, e:
-        logger.exception('failed to execute command "%s": %s' % (' '.join(cmd), str(e)))
+        logger.exception('failed to execute command "%s": %s', ' '.join(cmd), str(e))
         return None, None, None
 
 def udisks(dev, option):
@@ -172,5 +172,5 @@ def check_commands(cmds):
     for cmd in cmds:
         if popen('which %s' % cmd)[-1] != 0:
             res = False
-            logger.error('%s is missing' % cmd)
+            logger.error('%s is missing', cmd)
     return res

@@ -21,7 +21,7 @@ def _set_service(svc, status):
     output, returncode = _service(svc, status)
     if returncode == 0 or RE_SERVICE[status].search(output):
         return True
-    logger.error('failed to %s service %s: %s' % (status, svc, output))
+    logger.error('failed to %s service %s: %s', status, svc, output)
     return False
 
 def is_running(svc):
