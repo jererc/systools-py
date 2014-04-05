@@ -81,7 +81,7 @@ def timer(duration_min=5):
             if duration >= duration_min:
                 module_file = inspect.getfile(func)
                 module_name = '%s.%s' % (os.path.splitext(os.path.basename(module_file))[0], func.__name__)
-                logging.getLogger(module_name).debug('processed in %s (args: %s, %s)', timedelta(seconds=duration), str(args), str(kwargs))
+                logging.getLogger(module_name).debug('processed in %s (args: %s, %s)', str(timedelta(seconds=duration)), str(args), str(kwargs))
 
             return result
         return wraps(func)(wrapper)
