@@ -87,17 +87,18 @@ def timer(duration_min=5):
         return wraps(func)(wrapper)
     return decorator
 
-def popen(cmd, cwd=None):
+def popen(cmd, cwd=None, shell=False):
     '''Execute a command.
 
     :return: tuple (stdout, stderr, return code)
     '''
-    if not isinstance(cmd, (list, tuple)):
+    if not shell and not isinstance(cmd, (list, tuple)):
         cmd = cmd.split()
 
     try:
         proc = subprocess.Popen(cmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                cwd=cwd, shell=shell)
         stdout, stderr = proc.communicate()
         return stdout.splitlines(), stderr.splitlines(), proc.returncode
     except Exception, e:

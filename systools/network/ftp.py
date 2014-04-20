@@ -25,6 +25,12 @@ class Ftp(object):
         except Exception:
             pass
 
+    def close(self):
+        try:
+            self.ftp.quit()
+        except Exception:
+            pass
+
     def exists(self, path):
         if not self.isfile(path):
             try:
